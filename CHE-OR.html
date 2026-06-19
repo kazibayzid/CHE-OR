@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Welcome to Chemical Engineering — BUET</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#08272B; --deep:#0A3A40; --deep2:#0E4C52; --teal:#0D9488; --teal2:#14B8A6;
+    --seaf:#5EEAD4; --amber:#F8A516; --amber2:#FBBF4D; --amberd:#D97706;
+    --cloud:#EAF4F3; --mute:#8FB3B2; --line:rgba(94,234,212,.14);
+    --card:rgba(255,255,255,.045); --cardb:rgba(94,234,212,.16);
+    --disp:'Space Grotesk',system-ui,'Segoe UI',Roboto,sans-serif;
+    --body:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--body); background:var(--ink); color:#EAF6F4;
+    overflow:hidden; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  body.scrollable{overflow:auto}
+  canvas#hex{position:fixed;inset:0;z-index:0;display:block}
+  .glowfield{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .ghex{position:absolute;width:120px;height:138px;
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    opacity:.05;animation:pulse 9s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.03;transform:scale(.96)}50%{opacity:.14;transform:scale(1.04)}}
+
+  /* ---------- deck ---------- */
+  .deck{position:relative;z-index:2;height:100dvh;width:100%}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;padding:56px clamp(20px,5vw,64px) 96px;opacity:0;visibility:hidden;
+    pointer-events:none;transition:opacity .5s ease;overflow-y:auto}
+  .slide.active{opacity:1;visibility:visible;pointer-events:auto}
+  .wrap{width:100%;max-width:1080px;margin:auto}
+
+  .eyebrow{font-family:var(--body);font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    font-size:clamp(11px,1.4vw,13px);color:var(--amber);margin-bottom:14px}
+  h1{font-family:var(--disp);font-weight:700;line-height:1.02;letter-spacing:-.02em}
+  h2{font-family:var(--disp);font-weight:700;line-height:1.05;letter-spacing:-.015em;
+    font-size:clamp(28px,5vw,52px)}
+  .lead{color:#BFE3DF;font-size:clamp(15px,2.1vw,20px);line-height:1.5;max-width:48ch}
+  .seaf{color:var(--seaf)} .amber{color:var(--amber)} .mute{color:var(--mute)}
+
+  /* entrance stagger */
+  .rise{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
+  .active .rise{opacity:1;transform:none}
+  .active .rise:nth-child(2){transition-delay:.08s}
+  .active .rise:nth-child(3){transition-delay:.16s}
+  .active .rise:nth-child(4){transition-delay:.24s}
+  .active .rise:nth-child(5){transition-delay:.32s}
+  .active .rise:nth-child(6){transition-delay:.40s}
+
+  /* ---------- cover ---------- */
+  .badge{display:inline-block;font-weight:700;font-size:12px;letter-spacing:.12em;
+    color:var(--ink);background:var(--amber);padding:7px 16px;border-radius:999px;text-transform:uppercase}
+  .cover h1{font-size:clamp(44px,9vw,108px)}
+  .cover .sub{color:var(--seaf);font-family:var(--disp);font-weight:500;
+    font-size:clamp(20px,3.4vw,34px);margin-bottom:6px}
+  .hint{display:inline-flex;align-items:center;gap:10px;color:var(--mute);font-size:14px;margin-top:8px}
+  .hint .key{display:inline-grid;place-items:center;min-width:26px;height:26px;border:1px solid var(--cardb);
+    border-radius:7px;font-size:13px;color:var(--seaf);padding:0 7px}
+
+  /* ---------- generic card ---------- */
+  .card{background:var(--card);border:1px solid var(--cardb);border-radius:16px;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+  /* ---------- morning grid ---------- */
+  .grid6{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}
+  .tile{position:relative;height:130px;border-radius:16px;cursor:pointer;perspective:900px;
+    background:none;border:none;padding:0;text-align:left;color:inherit;font:inherit}
+  .tile .face{position:absolute;inset:0;border-radius:16px;display:flex;flex-direction:column;
+    justify-content:center;padding:18px;transition:transform .55s cubic-bezier(.3,.7,.2,1);
+    backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .tile .front{background:var(--card);border:1px solid var(--cardb)}
+  .tile .front .t{font-family:var(--disp);font-weight:600;font-size:17px}
+  .tile .front .tap{color:var(--mute);font-size:12.5px;margin-top:6px}
+  .tile .back{background:linear-gradient(160deg,var(--deep2),var(--deep));border:1px solid var(--teal);
+    transform:rotateY(180deg)}
+  .tile .back .role{color:var(--seaf);font-size:13.5px;line-height:1.35}
+  .tile.flip .front{transform:rotateY(180deg)}
+  .tile.flip .back{transform:rotateY(0)}
+  .counter{display:inline-flex;align-items:center;gap:10px;margin-top:22px;color:var(--mute);font-size:15px}
+  .bar{width:130px;height:7px;border-radius:99px;background:var(--card);overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--seaf));
+    transition:width .5s ease}
+  .punch{font-family:var(--disp);font-weight:600;font-size:clamp(17px,2.4vw,22px);margin-top:14px;
+    opacity:0;transform:translateY(8px);transition:.5s}
+  .punch.show{opacity:1;transform:none}
+
+  /* ---------- honest ---------- */
+  .honest{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:center}
+  .qcard{padding:30px;border-radius:20px;background:linear-gradient(160deg,var(--deep2),var(--deep));
+    border:1px solid var(--teal)}
+  .qcard .quote{font-family:var(--disp);font-weight:700;font-size:clamp(22px,3vw,30px);line-height:1.12}
+  .choices{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+  .choice{background:var(--card);border:1px solid var(--cardb);color:#EAF6F4;font:inherit;font-weight:500;
+    padding:13px 18px;border-radius:12px;cursor:pointer;transition:.2s;font-size:15px}
+  .choice:hover{border-color:var(--seaf);background:rgba(94,234,212,.08)}
+  .choice.sel{border-color:var(--amber);background:rgba(248,165,22,.12);color:#fff}
+  .response{margin-top:20px;color:var(--seaf);font-size:16px;line-height:1.5;max-width:46ch;
+    opacity:0;transform:translateY(8px);transition:.5s}
+  .response.show{opacity:1;transform:none}
+
+  /* ---------- scale ---------- */
+  .scaleStage{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:18px}
+  .vesselWrap{display:grid;place-items:center;height:300px;position:relative}
+  .vessel{transition:transform .25s ease}
+  .scaleVal{font-family:var(--disp);font-weight:700;font-size:clamp(34px,5vw,56px);
+    background:linear-gradient(90deg,var(--seaf),var(--amber));-webkit-background-clip:text;
+    background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+  .scaleName{font-family:var(--disp);font-weight:600;font-size:20px;margin-top:6px}
+  .scaleDesc{color:var(--mute);margin-top:8px;font-size:15px;line-height:1.5;min-height:48px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+    background:linear-gradient(90deg,var(--teal),var(--seaf));outline:none;margin-top:26px;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:var(--amber);border:3px solid var(--ink);box-shadow:0 0 0 3px var(--amber);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--amber);
+    border:3px solid var(--ink);cursor:pointer}
+  .ticks{display:flex;justify-content:space-between;color:var(--mute);font-size:12px;margin-top:10px}
+
+  /* ---------- radial ---------- */
+  .radialStage{display:grid;grid-template-columns:1fr .82fr;gap:30px;align-items:center;margin-top:14px}
+  .radial{position:relative;width:100%;aspect-ratio:1/1;max-width:460px;margin:auto}
+  .radial svg.lines{position:absolute;inset:0;width:100%;height:100%}
+  .node{position:absolute;width:23%;aspect-ratio:1/1;border-radius:50%;transform:translate(-50%,-50%);
+    background:var(--card);border:1.5px solid var(--cardb);display:grid;place-items:center;
+    cursor:pointer;transition:.25s;color:var(--seaf);padding:6px}
+  .node:hover,.node.on{border-color:var(--amber);background:rgba(248,165,22,.12);color:var(--amber);transform:translate(-50%,-50%) scale(1.07)}
+  .node svg{width:42%;height:42%}
+  .node .nl{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:12px;
+    font-weight:600;color:#CDE9E5;white-space:nowrap}
+  .hub{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1/1;border-radius:50%;
+    transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%,var(--deep2),var(--ink));
+    border:1px solid var(--teal);display:grid;place-items:center;text-align:center;
+    font-family:var(--disp);font-weight:700;font-size:clamp(11px,1.5vw,15px);line-height:1.05;
+    color:#fff;box-shadow:0 0 40px rgba(13,148,136,.35)}
+  .detail{min-height:150px}
+  .detail .dname{font-family:var(--disp);font-weight:700;font-size:24px;color:var(--amber);display:flex;
+    align-items:center;gap:12px}
+  .detail .dname svg{width:30px;height:30px;color:var(--seaf)}
+  .detail p{color:#CFE9E5;font-size:16px;line-height:1.55;margin-top:12px;max-width:42ch}
+  .detail .empty{color:var(--mute);font-size:16px;line-height:1.5}
+
+  /* ---------- guess stat ---------- */
+  .guessStage{max-width:720px;margin:22px auto 0}
+  .gbarTrack{position:relative;height:54px;border-radius:14px;background:var(--card);
+    border:1px solid var(--cardb);overflow:hidden;margin-top:24px}
+  .gbarFill{position:absolute;inset:0 auto 0 0;width:0;border-radius:14px;
+    background:linear-gradient(90deg,var(--teal),var(--seaf));transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+  .gbarFill b{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink);
+    font-family:var(--disp);font-weight:700;font-size:20px;opacity:0;transition:opacity .4s .7s}
+  .gmark{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--amber);opacity:0;transition:.4s}
+  .gmark span{position:absolute;top:-26px;left:50%;transform:translateX(-50%);white-space:nowrap;
+    color:var(--amber);font-size:12px;font-weight:600}
+  .gresult{margin-top:30px;font-size:17px;color:#CFE9E5;line-height:1.5;opacity:0;transition:.5s;min-height:50px}
+  .gresult.show{opacity:1}
+  .btn{background:var(--amber);color:var(--ink);font:inherit;font-weight:700;border:none;
+    padding:13px 26px;border-radius:12px;cursor:pointer;font-size:15px;transition:.2s}
+  .btn:hover{background:var(--amber2)}
+  .btn:disabled{opacity:.4;cursor:default}
+
+  /* ---------- challenge explorer ---------- */
+  .chgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px}
+  .chip{background:var(--card);border:1px solid var(--cardb);border-radius:14px;padding:20px;
+    cursor:pointer;transition:.25s}
+  .chip:hover{border-color:var(--seaf)}
+  .chip .ct{font-family:var(--disp);font-weight:600;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+  .chip .plus{color:var(--amber);font-size:22px;transition:.3s}
+  .chip.open .plus{transform:rotate(45deg)}
+  .chip .cd{max-height:0;overflow:hidden;color:var(--mute);font-size:14.5px;line-height:1.5;
+    transition:max-height .35s ease,margin .35s ease}
+  .chip.open .cd{max-height:120px;margin-top:12px;color:#BFE3DF}
+
+  /* ---------- toolkit pipeline ---------- */
+  .pipe{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+  .pnode{flex:1 1 150px;min-width:140px;background:var(--card);border:1px solid var(--cardb);
+    border-radius:14px;padding:18px 14px;text-align:center;transition:.25s;cursor:default}
+  .pnode:hover{border-color:var(--seaf);background:rgba(94,234,212,.07);transform:translateY(-4px)}
+  .pnode .pn{font-family:var(--disp);font-weight:600;color:var(--seaf);font-size:16px}
+  .pnode .pd{color:var(--mute);font-size:12.5px;margin-top:8px;line-height:1.4}
+  .pillban{margin-top:26px;padding:20px 24px;border-radius:14px;background:rgba(248,165,22,.1);
+    border:1px solid rgba(248,165,22,.3);font-size:16px;line-height:1.5}
+
+  /* ---------- careers ---------- */
+  .cargrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:24px}
+  .car{background:var(--card);border:1px solid var(--cardb);border-radius:14px;padding:16px;cursor:pointer;
+    transition:.25s;text-align:center}
+  .car:hover,.car.on{border-color:var(--amber);background:rgba(248,165,22,.1)}
+  .car .cn{font-family:var(--disp);font-weight:600;font-size:14.5px}
+  .car .cdet{color:var(--mute);font-size:12px;margin-top:6px;line-height:1.35;max-height:0;overflow:hidden;transition:max-height .3s}
+  .car.on .cdet{max-height:80px;color:#BFE3DF}
+
+  /* ---------- people flip ---------- */
+  .people{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:24px}
+  .pcard{height:240px;perspective:1100px;cursor:pointer}
+  .pinner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.3,.7,.2,1);
+    transform-style:preserve-3d}
+  .pcard.flip .pinner{transform:rotateY(180deg)}
+  .pfront,.pback{position:absolute;inset:0;border-radius:18px;backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center;
+    align-items:center;padding:22px;text-align:center}
+  .pfront{background:var(--card);border:1px solid var(--cardb)}
+  .pback{background:linear-gradient(160deg,var(--deep2),var(--deep));border:1px solid var(--teal);
+    transform:rotateY(180deg)}
+  .mono{width:80px;height:80px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(circle at 35% 30%,var(--deep2),var(--ink));border:1px solid var(--teal);
+    font-family:var(--disp);font-weight:700;font-size:30px;color:var(--amber)}
+  .pname{font-family:var(--disp);font-weight:700;font-size:20px;margin-top:16px}
+  .pche{color:var(--seaf);font-size:12.5px;font-weight:600;margin-top:6px;letter-spacing:.02em}
+  .pfliphint{color:var(--mute);font-size:11.5px;margin-top:14px}
+  .pback .pwhat{color:#DDF3EF;font-size:15px;line-height:1.5}
+  .pcard.ph .pfront{background:rgba(94,234,212,.045);border:1.5px dashed var(--cardb)}
+  .pcard.ph .mono{background:radial-gradient(circle at 35% 30%,rgba(14,76,82,.45),rgba(8,39,43,.45));
+    border:1.5px dashed var(--teal);color:var(--seaf);font-weight:500}
+  .pcard.ph .pname{color:#BFE3DF}
+
+  /* ---------- reframe ---------- */
+  .reframe{text-align:center}
+  .reframe .ask{font-family:var(--disp);font-weight:700;font-size:clamp(26px,4vw,42px);line-height:1.1}
+  .reframe .revealZone{margin-top:8px}
+  .bigreveal{opacity:0;transform:translateY(20px) scale(.97);transition:.7s cubic-bezier(.2,.7,.2,1)}
+  .bigreveal.show{opacity:1;transform:none}
+  .bigreveal h2{font-size:clamp(30px,5.4vw,60px)}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+  .pillar{background:var(--card);border:1px solid var(--cardb);border-radius:16px;padding:22px;text-align:left;
+    opacity:0;transform:translateY(18px);transition:.6s}
+  .pillars.show .pillar{opacity:1;transform:none}
+  .pillars.show .pillar:nth-child(2){transition-delay:.12s}
+  .pillars.show .pillar:nth-child(3){transition-delay:.24s}
+  .pillar .pt{font-family:var(--disp);font-weight:700;font-size:20px;color:var(--amber)}
+  .pillar .pp{color:#CFE9E5;font-size:14px;line-height:1.5;margin-top:8px}
+
+  /* ---------- asks / welcome ---------- */
+  .asks{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:26px}
+  .ask-i{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--cardb);
+    border-radius:14px;padding:18px}
+  .ask-i .num{flex:none;width:42px;height:42px;border-radius:50%;background:var(--amber);color:var(--ink);
+    font-family:var(--disp);font-weight:700;font-size:20px;display:grid;place-items:center}
+  .ask-i .at{font-family:var(--disp);font-weight:600;font-size:16px}
+  .ask-i .ad{color:var(--mute);font-size:13.5px;margin-top:4px;line-height:1.45}
+  .welcome h1{font-size:clamp(36px,7vw,80px)}
+  .restart{margin-top:30px;display:inline-flex;align-items:center;gap:10px;background:none;border:1px solid var(--cardb);
+    color:var(--seaf);font:inherit;font-weight:600;padding:12px 22px;border-radius:12px;cursor:pointer;transition:.2s}
+  .restart:hover{border-color:var(--seaf);background:rgba(94,234,212,.08)}
+
+  /* ---------- chrome: progress + nav ---------- */
+  .topbar{position:fixed;top:0;left:0;right:0;height:4px;z-index:30;background:rgba(94,234,212,.1)}
+  .topbar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--amber));transition:width .4s}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+    padding:14px clamp(16px,4vw,40px);gap:16px;background:linear-gradient(0deg,rgba(8,39,43,.9),transparent)}
+  .dots{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;flex:1}
+  .dot{width:9px;height:9px;border-radius:50%;background:rgba(94,234,212,.22);border:none;cursor:pointer;
+    padding:0;transition:.2s}
+  .dot.on{background:var(--amber);transform:scale(1.25)}
+  .navbtn{width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--cardb);
+    color:var(--seaf);cursor:pointer;display:grid;place-items:center;transition:.2s;flex:none}
+  .navbtn:hover{border-color:var(--seaf);background:rgba(94,234,212,.1)}
+  .navbtn:disabled{opacity:.3;cursor:default}
+  .navbtn svg{width:20px;height:20px}
+  .counterTL{position:fixed;top:18px;left:clamp(16px,4vw,40px);z-index:30;font-family:var(--disp);
+    font-weight:600;font-size:14px;color:var(--mute);letter-spacing:.05em}
+  .counterTL b{color:var(--seaf)}
+  .fsbtn{position:fixed;top:14px;right:clamp(16px,4vw,40px);z-index:30;width:40px;height:40px;border-radius:10px;
+    background:var(--card);border:1px solid var(--cardb);color:var(--seaf);cursor:pointer;display:grid;place-items:center}
+  .fsbtn:hover{border-color:var(--seaf)}
+  .fsbtn svg{width:18px;height:18px}
+
+  /* ---------- live Q&A: presenter ---------- */
+  .liveStage{display:grid;grid-template-columns:300px 1fr;gap:26px;margin-top:18px;align-items:start}
+  .joinCol{display:flex;flex-direction:column;gap:12px}
+  .qrbox{width:210px;height:210px;background:#fff;border-radius:16px;padding:12px;display:grid;place-items:center;
+    box-shadow:0 8px 30px rgba(0,0,0,.3)}
+  .qrbox img,.qrbox canvas{width:100%!important;height:100%!important;display:block}
+  .qrfallback{font-size:11px;color:#08272B;text-align:center;word-break:break-all;padding:8px}
+  .joinlabel{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--seaf)}
+  .joinurl{color:var(--mute);font-size:12px;margin-top:6px;word-break:break-all}
+  .livestat{display:inline-flex;align-items:center;gap:8px;margin-top:12px;color:#CFE9E5;font-size:14px;font-weight:600}
+  .livedot{width:9px;height:9px;border-radius:50%;background:#9aa6a6}
+  .livedot.on{background:#34d399;animation:livepulse 1.6s infinite}
+  @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  .wallCol{min-width:0}
+  .wallhead{display:flex;justify-content:space-between;align-items:center;color:var(--mute);
+    font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:.04em;margin-bottom:10px}
+  .clearbtn{background:none;border:1px solid var(--cardb);color:var(--mute);font:inherit;font-size:12px;
+    padding:5px 12px;border-radius:8px;cursor:pointer}
+  .clearbtn:hover{border-color:#ef5350;color:#ef9a9a}
+  .qwall{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;padding-right:6px}
+  .qitem{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--cardb);
+    border-radius:12px;padding:12px 14px}
+  .qvote{flex:none;display:flex;flex-direction:column;align-items:center;min-width:38px;color:var(--seaf)}
+  .qvote .vc{font-family:var(--disp);font-weight:700;font-size:18px}
+  .qvote .va{font-size:10px}
+  .qbody{flex:1;min-width:0}
+  .qtext{font-size:14.5px;line-height:1.4;color:#EAF6F4}
+  .qmeta{font-size:11.5px;color:var(--mute);margin-top:4px}
+  .qtag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:2px 7px;border-radius:6px;margin-right:7px;vertical-align:middle}
+  .qtag.q{background:rgba(94,234,212,.16);color:var(--seaf)}
+  .qtag.f{background:rgba(248,165,22,.16);color:var(--amber2)}
+  .qx{flex:none;background:none;border:none;color:var(--mute);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px}
+  .qx:hover{color:#ef9a9a}
+  .qempty{color:var(--mute);font-size:14px;padding:18px;text-align:center;border:1px dashed var(--cardb);border-radius:12px}
+  .setupPanel,.asksetup{background:rgba(248,165,22,.08);border:1px solid rgba(248,165,22,.3);border-radius:14px;
+    padding:18px 20px;margin-top:18px;font-size:13.5px;line-height:1.6;color:#EAF6F4}
+  .setupPanel b,.asksetup b{color:var(--amber)}
+  .setupPanel code,.asksetup code{background:rgba(0,0,0,.32);padding:1px 6px;border-radius:5px;font-size:12px;color:var(--seaf)}
+  .setupPanel ol,.asksetup ol{margin:8px 0 0 18px}.setupPanel li,.asksetup li{margin-bottom:6px}
+
+  /* ---------- live Q&A: student ask view ---------- */
+  #askApp{display:none}
+  body.mode-ask .deck,body.mode-ask .nav,body.mode-ask .topbar,body.mode-ask .counterTL,body.mode-ask .fsbtn{display:none!important}
+  body.mode-ask{overflow:auto}
+  body.mode-ask #askApp{display:block;position:relative;z-index:3;min-height:100dvh}
+  .askInner{max-width:560px;margin:0 auto;padding:24px 20px 60px}
+  .askHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .askTitle{font-family:var(--disp);font-weight:700;font-size:24px}
+  .askRoom{display:inline-flex;align-items:center;gap:8px;color:var(--mute);font-size:13px}
+  .askCompose{background:var(--card);border:1px solid var(--cardb);border-radius:16px;padding:16px}
+  #askText,#askName{width:100%;background:rgba(0,0,0,.22);border:1px solid var(--cardb);border-radius:10px;
+    color:#EAF6F4;font:inherit;font-size:15px;padding:12px;resize:vertical}
+  #askText::placeholder,#askName::placeholder{color:var(--mute)}
+  .askRow{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  #askName{flex:1;min-width:150px}
+  .seg{display:inline-flex;background:rgba(0,0,0,.22);border:1px solid var(--cardb);border-radius:10px;overflow:hidden}
+  .segbtn{background:none;border:none;color:var(--mute);font:inherit;font-size:13px;font-weight:600;padding:11px 15px;cursor:pointer}
+  .segbtn.on{background:var(--teal);color:#06201f}
+  .askSend{width:100%;margin-top:12px}
+  .asktoast{text-align:center;color:var(--seaf);font-size:13px;margin-top:10px;min-height:16px;opacity:0;transition:.3s}
+  .asktoast.show{opacity:1}
+  .asklisthead{color:var(--mute);font-size:13px;margin:22px 0 10px}
+  .asklist{display:flex;flex-direction:column;gap:10px}
+  .aitem{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--cardb);border-radius:12px;padding:12px 14px}
+  .avote{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;
+    background:rgba(94,234,212,.08);border:1px solid var(--cardb);border-radius:10px;padding:7px 0;cursor:pointer;color:var(--seaf);transition:.2s}
+  .avote:hover{border-color:var(--seaf)}
+  .avote.voted{background:rgba(94,234,212,.22);border-color:var(--seaf)}
+  .avote .ac{font-family:var(--disp);font-weight:700;font-size:16px}
+  .avote .aa{font-size:12px;line-height:1}
+  .abody{flex:1;min-width:0}
+  @media(max-width:880px){
+    .liveStage{grid-template-columns:1fr;gap:18px}
+    .qrbox{width:172px;height:172px}
+    .qwall{max-height:240px}
+  }
+
+  /* ---------- responsive ---------- */
+  @media(max-width:880px){
+    .honest,.scaleStage,.radialStage{grid-template-columns:1fr;gap:24px}
+    .radial{max-width:330px}
+    .cargrid{grid-template-columns:repeat(2,1fr)}
+    .people{grid-template-columns:1fr;gap:14px}
+    .pcard{height:180px}
+    .pillars{grid-template-columns:1fr}
+    .asks{grid-template-columns:1fr}
+    .grid6{grid-template-columns:repeat(2,1fr)}
+    .chgrid{grid-template-columns:1fr}
+    .vesselWrap{height:200px}
+  }
+  @media(max-width:480px){
+    .grid6{grid-template-columns:1fr}
+    .tile{height:96px}
+    .dots{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    .rise,.punch,.response,.gresult,.bigreveal,.pillar{opacity:1!important;transform:none!important}
+  }
+</style>
+</head>
+<body>
+<canvas id="hex"></canvas>
+<div class="glowfield" id="glow" aria-hidden="true"></div>
+
+<div class="topbar"><i id="topfill"></i></div>
+<div class="counterTL"><b id="cnow">01</b> / <span id="ctot">12</span></div>
+<button class="fsbtn" id="fsbtn" title="Full screen" aria-label="Toggle full screen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/></svg>
+</button>
+
+<div class="deck" id="deck">
+
+  <!-- 0 COVER -->
+  <section class="slide cover active">
+    <div class="wrap">
+      <div class="badge rise">BUET · Department of Chemical Engineering</div>
+      <div class="sub rise" style="margin-top:26px">Welcome to</div>
+      <h1 class="rise">Chemical<br>Engineering</h1>
+      <p class="lead rise" style="margin-top:22px">The most useful question in engineering: <span class="seaf">how do we make this — cleanly, safely, and for everyone?</span></p>
+      <div class="rise" style="margin-top:26px">
+        <span class="hint">Move with <span class="key">→</span><span class="key">←</span> · click the arrows · or tap items as you go</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 MORNING -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">Before you even reached campus</div>
+      <h2 class="rise">You already met a chemical engineer today</h2>
+      <p class="lead rise" style="margin-top:14px">Tap each thing from your morning to see who was really behind it.</p>
+      <div class="grid6 rise" id="grid6"></div>
+      <div class="counter rise">
+        <span>Discovered <b id="mcount" class="seaf">0</b> / 6</span>
+        <span class="bar"><i id="mbar"></i></span>
+      </div>
+      <div class="punch" id="mpunch"><span class="amber">Every single one</span> passed through a chemical engineer's hands.</div>
+    </div>
+  </section>
+
+  <!-- 2 A QUICK WELCOME -->
+  <section class="slide">
+    <div class="wrap honest">
+      <div>
+        <div class="eyebrow rise">A quick welcome</div>
+        <h2 class="rise">You've joined the most versatile branch of engineering</h2>
+        <p class="lead rise" style="margin-top:16px">Here's a fun way to feel it — pick a future you'd most like a hand in:</p>
+        <div class="choices rise">
+          <button class="choice" data-r="energy">Clean energy</button>
+          <button class="choice" data-r="water">Safe water for all</button>
+          <button class="choice" data-r="medicine">Medicine for everyone</button>
+          <button class="choice" data-r="materials">Greener materials</button>
+        </div>
+        <p class="response" id="hresp"></p>
+      </div>
+      <div class="qcard rise">
+        <div class="quote">One degree.<br><span class="seaf">Almost any future.</span></div>
+        <p style="color:var(--mute);margin-top:18px;font-size:14px;font-style:italic">Let's take a look at what's actually here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 SCALE -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">What chemical engineers actually do</div>
+      <h2 class="rise">From a flask to a factory</h2>
+      <p class="lead rise" style="margin-top:14px">A chemist makes a <span class="seaf">gram</span> in a flask. A chemical engineer makes it for <span class="amber">millions</span>. Drag to scale it up.</p>
+      <div class="scaleStage rise">
+        <div class="vesselWrap"><div class="vessel" id="vessel"></div></div>
+        <div>
+          <div class="scaleVal" id="sval">1 gram</div>
+          <div class="scaleName" id="sname">In the lab</div>
+          <div class="scaleDesc" id="sdesc">One reaction that works on a benchtop. Proof it's possible.</div>
+        </div>
+      </div>
+      <input type="range" id="srange" min="0" max="4" value="0" step="1" aria-label="Production scale">
+      <div class="ticks rise"><span>1 g</span><span>1 kg</span><span>1 tonne</span><span>100 t</span><span>10,000 t / yr</span></div>
+    </div>
+  </section>
+
+  <!-- 4 RADIAL -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">The universal engineer</div>
+      <h2 class="rise">One discipline, at the centre of everything</h2>
+      <div class="radialStage rise">
+        <div class="radial" id="radial">
+          <svg class="lines" id="rlines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+          <div class="hub">CHEMICAL<br>ENGINEERING</div>
+        </div>
+        <div class="detail" id="rdetail">
+          <p class="empty">Tap any industry to see how chemical engineering powers it. There are six — see if you can find them all.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 GUESS STAT -->
+  <section class="slide">
+    <div class="wrap" style="text-align:center">
+      <div class="eyebrow rise">Closer to home</div>
+      <h2 class="rise">Chemical engineering runs Bangladesh</h2>
+      <p class="lead rise" style="margin:14px auto 0">Take a guess: what share of the country's <span class="seaf">export earnings</span> comes from garments &amp; textiles — dyeing, finishing and effluent treatment, all chemical-engineering work?</p>
+      <div class="guessStage">
+        <div class="scaleVal" style="font-size:clamp(40px,7vw,64px)" id="gval">40%</div>
+        <input type="range" id="grange" min="0" max="100" value="40" step="1" aria-label="Your guess">
+        <div class="gbarTrack"><div class="gbarFill" id="gfill"><b id="gfillb"></b></div><div class="gmark" id="gmark"><span>your guess</span></div></div>
+        <div style="margin-top:22px"><button class="btn" id="gbtn">Reveal the answer</button></div>
+        <p class="gresult" id="gresult"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 CHALLENGES -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">The big stakes — and they're personal</div>
+      <h2 class="rise">The problems your generation will solve</h2>
+      <p class="lead rise" style="margin-top:12px">Not "someday" problems — the next forty years of your career. Tap to open each one.</p>
+      <div class="chgrid rise" id="chgrid"></div>
+    </div>
+  </section>
+
+  <!-- 7 TOOLKIT -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">The toolkit you'll build</div>
+      <h2 class="rise">You'll learn to think in systems</h2>
+      <div class="pipe rise" id="pipe"></div>
+      <div class="pillban rise"><span class="amber" style="font-weight:700">You're learning to think in systems</span> — to take something messy and complex and make it work, reliably. That skill transfers to almost anything you'll ever do.</div>
+    </div>
+  </section>
+
+  <!-- 8 CAREERS -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">One training, many doors</div>
+      <h2 class="rise">Where this degree can take you</h2>
+      <p class="lead rise" style="margin-top:12px">One training, many doors. Tap a path to see more.</p>
+      <div class="cargrid rise" id="cargrid"></div>
+      <p class="rise" style="margin-top:22px;font-style:italic;color:var(--seaf);font-size:15px">The training is so general that chemical engineers turn up everywhere — including places you'd never guess.</p>
+    </div>
+  </section>
+
+  <!-- 9 PEOPLE -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">Proof it's a launchpad</div>
+      <h2 class="rise">They started where you're sitting</h2>
+      <p class="lead rise" style="margin-top:12px">Tap each card. Same degree — wildly different paths.</p>
+      <div class="people rise" id="people"></div>
+      <p class="rise" style="margin-top:20px;text-align:center;font-style:italic;color:#CFE9E5;font-size:15px">
+        Same starting point, three completely different orbits — that's the range this degree gives you. And some of the very best examples are our own.</p>
+    </div>
+  </section>
+
+  <!-- 10b BUET ALUMNI -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">And closer to home</div>
+      <h2 class="rise">BUET chemical engineers, out in the world</h2>
+      <p class="lead rise" style="margin-top:12px">The same benches you're sitting on now. Tap a card to flip it.</p>
+      <div class="people rise" id="buetpeople"></div>
+      <p class="rise" id="alumNote" style="margin-top:16px;text-align:center;color:var(--mute);font-size:13px"></p>
+    </div>
+  </section>
+
+  <!-- 10 REFRAME -->
+  <section class="slide">
+    <div class="wrap reframe">
+      <div class="eyebrow rise">So, here's the deal</div>
+      <div id="reframeQ">
+        <h2 class="ask rise">What does a chemical engineering degree really give you?</h2>
+        <div class="rise" style="margin-top:30px"><button class="btn" id="rbtn">Reveal it</button></div>
+      </div>
+      <div class="revealZone">
+        <div class="bigreveal" id="rbig" style="display:none">
+          <h2>You can go <span class="amber">almost anywhere</span>.</h2>
+          <p class="lead" style="margin:18px auto 0">The real gift of this degree is <span class="seaf">versatility</span> — energy, health, materials, data, climate or business, with the freedom to switch lanes whenever you want.</p>
+          <div class="pillars" id="pillars">
+            <div class="pillar"><div class="pt">Versatile</div><div class="pp">Energy, health, materials, data, climate, business — you get to choose.</div></div>
+            <div class="pillar"><div class="pt">Future-proof</div><div class="pp">Built on first principles that outlast any single technology.</div></div>
+            <div class="pillar"><div class="pt">Needed</div><div class="pp">By Bangladesh, and by the world — now more than ever.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11b YOUR TURN (live Q&A presenter) -->
+  <section class="slide">
+    <div class="wrap">
+      <div class="eyebrow rise">Your turn</div>
+      <h2 class="rise">Ask anything — and vote</h2>
+      <p class="lead rise" style="margin-top:10px">Scan the code, send a question or some feedback, and upvote the ones you want answered. The best rise to the top, live.</p>
+      <div class="liveStage rise" id="liveStage">
+        <div class="joinCol">
+          <div class="qrbox" id="qrbox"></div>
+          <div>
+            <div class="joinlabel">Scan to ask on your phone</div>
+            <div class="joinurl" id="joinurl"></div>
+            <div class="livestat"><span class="livedot" id="livedot"></span><span id="livecount">0 questions</span></div>
+          </div>
+        </div>
+        <div class="wallCol">
+          <div class="wallhead"><span>LIVE QUESTIONS</span><button class="clearbtn" id="clearbtn" title="Clear all questions">Clear</button></div>
+          <div class="qwall" id="qwall"></div>
+        </div>
+      </div>
+      <div class="setupPanel rise" id="setupPanel" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- 11 WELCOME -->
+  <section class="slide welcome">
+    <div class="wrap">
+      <div class="eyebrow rise">All I ask of you</div>
+      <h2 class="rise" style="font-size:clamp(24px,4vw,38px)">Four things, starting today</h2>
+      <div class="asks rise" id="asks"></div>
+      <h1 class="rise" style="margin-top:34px">You're exactly where the future is being made.</h1>
+      <p class="lead rise" style="margin-top:14px"><span class="seaf">Welcome to the Department of Chemical Engineering.</span> Let's go build what Bangladesh — and the world — needs next.</p>
+      <button class="restart rise" id="restart">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Start over
+      </button>
+    </div>
+  </section>
+
+</div>
+
+<div id="askApp" aria-hidden="true">
+  <div class="askInner">
+    <div class="askHead">
+      <div class="askTitle">Ask &amp; vote</div>
+      <div class="askRoom"><span class="livedot" id="livedot2"></span><span id="askroomlabel">connecting…</span></div>
+    </div>
+    <div class="askCompose" id="askCompose">
+      <textarea id="askText" maxlength="300" rows="3" placeholder="Ask a question or share feedback…"></textarea>
+      <div class="askRow">
+        <input id="askName" maxlength="40" placeholder="Your name (optional)">
+        <div class="seg" id="askType">
+          <button class="segbtn on" data-t="question">Question</button>
+          <button class="segbtn" data-t="feedback">Feedback</button>
+        </div>
+      </div>
+      <button class="btn askSend" id="askSend">Send</button>
+      <div class="asktoast" id="asktoast"></div>
+    </div>
+    <div class="asklisthead">What others are asking — tap ▲ to upvote</div>
+    <div class="asklist" id="asklist"></div>
+    <div class="asksetup" id="asksetup" style="display:none"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="navbtn" id="prev" aria-label="Previous">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="dots" id="dots"></div>
+  <button class="navbtn" id="next" aria-label="Next">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+"use strict";
+
+/* =================================================================
+   LIVE Q&A SETTINGS — edit these three things, then host the file.
+   Until a real Firebase config is pasted here, the deck still works
+   perfectly and the live section just shows setup instructions.
+   ================================================================= */
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAVhgRKsOAJpiNbgVQ3nJRox0ToGzvtrUM",
+  authDomain: "orientation-e11da.firebaseapp.com",
+  databaseURL: "https://orientation-e11da-default-rtdb.asia-southeast1.firebasedatabase.app
+",
+  projectId: "orientation-e11da"
+};
+var ROOM = "buet-che-orientation";   // any label; all questions group under this
+var ASK_URL = "";                    // optional short link to the #ask page; "" = auto-derive
+/* ================================================================= */
+
+/* ---------- icons (inline svg paths, 24-grid, stroke) ---------- */
+function svg(inner){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';}
+var IC={
+  energy: svg('<path d="M13 2 6 13h5l-1 9 8-11h-5l1-9z"/>'),
+  health: svg('<path d="M12 20S4 14.5 4 9a4 4 0 0 1 8-2 4 4 0 0 1 8 2c0 5.5-8 11-8 11z"/><path d="M4 12h4l1.5-3 2 5 1.5-2h7"/>'),
+  food: svg('<path d="M7 3v6M5 3v5a2 2 0 0 0 4 0V3M7 9v12"/><path d="M17 3c-2 1-3 4-3 7h3v11"/>'),
+  materials: svg('<path d="M3 9h7v7H3zM14 9h7v7h-7zM8.5 3h7v6h-7z"/>'),
+  water: svg('<path d="M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z"/>'),
+  electronics: svg('<rect x="7" y="7" width="10" height="10" rx="1"/><path d="M10 3v2M14 3v2M10 19v2M14 19v2M3 10h2M3 14h2M19 10h2M19 14h2"/>'),
+  flask: svg('<path d="M9 3h6M10 3v6l-5 9a1 1 0 0 0 .9 1.5h12.2a1 1 0 0 0 .9-1.5L14 9V3"/><path d="M7.5 14h9"/>')
+};
+
+/* ---------- data ---------- */
+var morning=[
+  ["Soap & toothpaste","Surfactants, formulation, blending"],
+  ["Your clothes","Synthetic fibres, dyeing & finishing"],
+  ["Fuel & energy","Refining, gas processing, power"],
+  ["Your breakfast","Fertiliser & food processing"],
+  ["Your phone","Purified silicon, battery, screen"],
+  ["Your medicine","Synthesis, scale-up, purity control"]
+];
+var scales=[
+  {v:"1 gram",n:"In the lab",d:"One reaction that works on a benchtop. Proof it's possible.",s:0.42},
+  {v:"1 kilogram",n:"Pilot bench",d:"Now it has to stay safe and consistent at a bigger size.",s:0.62},
+  {v:"1 tonne",n:"Pilot plant",d:"Heat, mixing and pressure start behaving very differently.",s:0.82},
+  {v:"100 tonnes",n:"Small plant",d:"Reactors, separators, pumps and control systems — a real process.",s:1.0},
+  {v:"10,000 t / yr",n:"Full-scale plant",d:"Running day and night, for millions of people. That leap is the whole discipline.",s:1.18}
+];
+var industries=[
+  {k:"energy",name:"Energy",p:"From refining crude oil to designing hydrogen fuel cells and better batteries, chemical engineers run the systems that power the world."},
+  {k:"health",name:"Health",p:"Every medicine and vaccine has to be synthesised, purified and scaled up safely. Turning a molecule into a tablet for millions is chemical engineering."},
+  {k:"food",name:"Food",p:"Fertiliser to grow it, and processing to make it safe and shelf-stable — feeding a growing planet is a chemical-engineering challenge."},
+  {k:"materials",name:"Materials",p:"Plastics, ceramics, composites, ultra-pure silicon — the materials modern life is built from are designed and produced by chemical engineers."},
+  {k:"water",name:"Water",p:"Desalination, arsenic removal, effluent treatment — making water safe to drink and safe to return to the river. Vital here in Bangladesh."},
+  {k:"electronics",name:"Electronics",p:"The ultra-pure chemicals and precise processes behind every microchip in your phone begin with chemical engineers."}
+];
+var challenges=[
+  ["Clean energy & climate","Hydrogen, carbon capture and better batteries — re-engineering how the planet makes and stores energy."],
+  ["Water for everyone","Desalination and removing arsenic and salinity — clean water that actually reaches every village."],
+  ["Rivers we can swim in","Cleaner dyeing and real effluent treatment, so Bangladesh can industrialise without poisoning its rivers."],
+  ["Ending material waste","Recycling and truly circular manufacturing — products designed to come back, not pile up."]
+];
+var toolkit=[
+  ["Thermodynamics","What's possible, and the energy it costs"],
+  ["Transport phenomena","How heat, mass & flow actually move"],
+  ["Reaction engineering","Taming chemical reactions at scale"],
+  ["Process design","Turning ideas into running plants"],
+  ["Process control","Keeping it safe and on-target"]
+];
+var careers=[
+  ["Process industry","Energy, pharma, FMCG, textiles, cement"],
+  ["R&D","New products, materials and processes"],
+  ["Energy & environment","Leading the sustainability transition"],
+  ["Data & tech","Process analytics, modelling, software"],
+  ["Consulting & finance","Analytical minds are in high demand"],
+  ["Entrepreneurship","Build and run your own venture"],
+  ["Academia & research","Top global PhD programmes welcome ChE"],
+  ["Safety & regulation","Keeping industry honest and safe"]
+];
+var people=[
+  ["AG","Andy Grove","Chemical engineering PhD","Built Intel and the microchip era that runs the device in your pocket."],
+  ["JW","Jack Welch","Chemical engineering PhD","Became one of the most famous CEOs in the world, leading GE for two decades."],
+  ["FC","Frank Capra","Chemical engineering degree","Walked off into film-making — and won three Academy Awards for Best Director."]
+];
+var buetAlumni=[
+  {real:true, mono:"SM", name:"Dr. M. Sam Mannan", che:"BUET Chemical Engineering · 1978",
+   what:"Became the world's leading process-safety researcher \u2014 Regents Professor at Texas A&M and director of the Mary Kay O'Connor Process Safety Center, the expert the U.S. Congress turned to after major industrial disasters."},
+  {real:true, mono:"SH", name:"Dr. Syed Hossainy", che:"BUET Chemical Engineering",
+   what:"A lead inventor of Abbott's XIENCE and Absorb coronary stents \u2014 drug-eluting and dissolvable heart scaffolds implanted in millions of patients worldwide. Now Adjunct Professor of Bioengineering at UC Berkeley."},
+  {real:true, mono:"RG", name:"Prof. Rafiqul Gani", che:"BUET Chemical Engineering · 1975",
+   what:"One of the field's most-cited chemical engineers \u2014 a pioneer of computer-aided process and product design at the Technical University of Denmark, with top honours from AIChE and the European Federation of Chemical Engineering."}
+];
+var asks=[
+  ["Stay curious","Ask \u201Chow is this made?\u201D about everything you touch."],
+  ["Give it a year to surprise you","First-year courses are just the foundation — the best of the field comes right after."],
+  ["Talk to people ahead of you","Seniors, faculty, alumni. See where this degree actually goes."],
+  ["Build things","Join teams, enter competitions, get your hands dirty."]
+];
+
+/* ---------- build dynamic content ---------- */
+var $=function(s,c){return (c||document).querySelector(s);};
+var found=0;
+(function buildMorning(){
+  var g=$("#grid6");
+  morning.forEach(function(m,i){
+    var b=document.createElement("button");
+    b.className="tile";b.setAttribute("aria-label",m[0]);
+    b.innerHTML='<div class="face front"><div class="t">'+m[0]+'</div><div class="tap">tap to reveal</div></div>'+
+                '<div class="face back"><div class="role">'+m[1]+'</div></div>';
+    b.addEventListener("click",function(){
+      if(!b.classList.contains("flip")){
+        b.classList.add("flip");found++;
+        $("#mcount").textContent=found;
+        $("#mbar").style.width=(found/6*100)+"%";
+        if(found===6){$("#mpunch").classList.add("show");}
+      }
+    });
+    g.appendChild(b);
+  });
+})();
+
+(function buildRadial(){
+  var r=$("#radial"),lines=$("#rlines"),detail=$("#rdetail");
+  var n=industries.length, R=35, cx=50, cy=50;
+  industries.forEach(function(ind,i){
+    var ang=(-90+i*(360/n))*Math.PI/180;
+    var x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang);
+    // line
+    var ln=document.createElementNS("http://www.w3.org/2000/svg","line");
+    ln.setAttribute("x1",cx);ln.setAttribute("y1",cy);ln.setAttribute("x2",x);ln.setAttribute("y2",y);
+    ln.setAttribute("stroke","rgba(94,234,212,.35)");ln.setAttribute("stroke-width",".6");
+    lines.appendChild(ln);
+    // node
+    var b=document.createElement("button");
+    b.className="node";b.style.left=x+"%";b.style.top=y+"%";
+    b.setAttribute("aria-label",ind.name);
+    b.innerHTML=IC[ind.k]+'<span class="nl">'+ind.name+'</span>';
+    b.addEventListener("click",function(){
+      r.querySelectorAll(".node").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on");
+      detail.innerHTML='<div class="dname">'+IC[ind.k]+ind.name+'</div><p>'+ind.p+'</p>';
+    });
+    r.appendChild(b);
+  });
+})();
+
+(function buildChallenges(){
+  var g=$("#chgrid");
+  challenges.forEach(function(c){
+    var d=document.createElement("div");
+    d.className="chip";
+    d.innerHTML='<div class="ct">'+c[0]+'<span class="plus">+</span></div><div class="cd">'+c[1]+'</div>';
+    d.addEventListener("click",function(){d.classList.toggle("open");});
+    g.appendChild(d);
+  });
+})();
+
+(function buildPipe(){
+  var g=$("#pipe");
+  toolkit.forEach(function(t){
+    var d=document.createElement("div");
+    d.className="pnode";
+    d.innerHTML='<div class="pn">'+t[0]+'</div><div class="pd">'+t[1]+'</div>';
+    g.appendChild(d);
+  });
+})();
+
+(function buildCareers(){
+  var g=$("#cargrid");
+  careers.forEach(function(c){
+    var d=document.createElement("button");
+    d.className="car";
+    d.innerHTML='<div class="cn">'+c[0]+'</div><div class="cdet">'+c[1]+'</div>';
+    d.addEventListener("click",function(){d.classList.toggle("on");});
+    g.appendChild(d);
+  });
+})();
+
+(function buildPeople(){
+  var g=$("#people");
+  people.forEach(function(p){
+    var d=document.createElement("div");
+    d.className="pcard";d.tabIndex=0;
+    d.innerHTML='<div class="pinner"><div class="pfront"><div class="mono">'+p[0]+'</div>'+
+      '<div class="pname">'+p[1]+'</div><div class="pche">'+p[2]+'</div><div class="pfliphint">tap to flip</div></div>'+
+      '<div class="pback"><div class="pwhat">'+p[3]+'</div></div></div>';
+    d.addEventListener("click",function(){d.classList.toggle("flip");});
+    d.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();d.classList.toggle("flip");}});
+    g.appendChild(d);
+  });
+})();
+(function buildBuet(){
+  var g=$("#buetpeople");
+  buetAlumni.forEach(function(p){
+    var d=document.createElement("div");
+    d.className="pcard"+(p.real?"":" ph");d.tabIndex=0;
+    d.innerHTML='<div class="pinner"><div class="pfront"><div class="mono">'+p.mono+'</div>'+
+      '<div class="pname">'+p.name+'</div><div class="pche">'+p.che+'</div><div class="pfliphint">tap to flip</div></div>'+
+      '<div class="pback"><div class="pwhat">'+p.what+'</div></div></div>';
+    d.addEventListener("click",function(){d.classList.toggle("flip");});
+    d.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();d.classList.toggle("flip");}});
+    g.appendChild(d);
+  });
+  if(buetAlumni.some(function(p){return !p.real;})){
+    $("#alumNote").textContent="Tip: replace the dashed cards with alumni from your own department — names the room will recognise.";
+  }
+})();
+
+(function buildAsks(){
+  var g=$("#asks");
+  asks.forEach(function(a,i){
+    var d=document.createElement("div");
+    d.className="ask-i";
+    d.innerHTML='<div class="num">'+(i+1)+'</div><div><div class="at">'+a[0]+'</div><div class="ad">'+a[1]+'</div></div>';
+    g.appendChild(d);
+  });
+})();
+
+/* ---------- scale slider ---------- */
+(function scaleInit(){
+  var r=$("#srange"),vessel=$("#vessel");
+  function factorySVG(){return svg('<path d="M3 21V10l5 3V10l5 3V10l5 3V8l3-2v15z"/><path d="M3 21h18"/>');}
+  function paint(i){
+    var s=scales[i];
+    $("#sval").textContent=s.v;$("#sname").textContent=s.n;$("#sdesc").textContent=s.d;
+    var size=Math.round(150*s.s);
+    var color=i<2?"var(--seaf)":(i<3?"var(--teal2)":"var(--amber)");
+    vessel.innerHTML='<div style="color:'+color+';width:'+size+'px;height:'+size+'px">'+(i>=3?factorySVG():IC.flask)+'</div>';
+    var sv=vessel.querySelector("svg");
+    if(sv){sv.style.width="100%";sv.style.height="100%";}
+  }
+  paint(0);
+  r.addEventListener("input",function(){paint(parseInt(r.value,10));});
+})();
+
+/* ---------- guess stat ---------- */
+(function guessInit(){
+  var r=$("#grange"),val=$("#gval"),btn=$("#gbtn"),fill=$("#gfill"),fb=$("#gfillb"),
+      mark=$("#gmark"),res=$("#gresult");
+  var TRUE=82;
+  r.addEventListener("input",function(){val.textContent=r.value+"%";});
+  btn.addEventListener("click",function(){
+    var guess=parseInt(r.value,10);
+    btn.disabled=true;r.disabled=true;
+    mark.style.left=guess+"%";mark.style.opacity="1";
+    fill.style.width=TRUE+"%";fb.textContent="80%+";fb.style.opacity="1";
+    var msg;
+    if(guess>=75&&guess<=88){msg="Spot on. ";}
+    else if(guess<75){msg="It's even bigger than you thought. ";}
+    else{msg="Close — and telling that you sense how huge it is. ";}
+    res.innerHTML=msg+'More than <span class="amber">80%</span> of Bangladesh\'s export earnings come from garments &amp; textiles. Pharmaceuticals, fertiliser, cement, food and energy run on the same engineering. <span class="seaf">This degree is woven through the national economy.</span>';
+    res.classList.add("show");
+  });
+})();
+
+/* ---------- honest choice ---------- */
+(function honestInit(){
+  var resp=$("#hresp");
+  var msg={
+    energy:"Clean energy is chemical-engineering home turf — hydrogen, carbon capture, better batteries. ",
+    water:"Safe water is one of our defining missions — desalination, arsenic removal, treatment. ",
+    medicine:"Every medicine is scaled up and purified by chemical engineers — that future runs straight through this department. ",
+    materials:"Greener materials and real recycling are being designed by chemical engineers right now. "
+  };
+  document.querySelectorAll(".choice").forEach(function(c){
+    c.addEventListener("click",function(){
+      document.querySelectorAll(".choice").forEach(function(o){o.classList.remove("sel");});
+      c.classList.add("sel");
+      resp.innerHTML=(msg[c.dataset.r]||"")+'<span class="seaf">Whatever pulled you here, this degree points straight at it.</span>';
+      resp.classList.add("show");
+    });
+  });
+})();
+
+/* ---------- reframe reveal ---------- */
+(function reframeInit(){
+  $("#rbtn").addEventListener("click",function(){
+    $("#reframeQ").style.transition="opacity .4s";$("#reframeQ").style.opacity="0";
+    setTimeout(function(){
+      $("#reframeQ").style.display="none";
+      var big=$("#rbig");big.style.display="block";
+      void big.offsetWidth;
+      big.classList.add("show");
+      setTimeout(function(){$("#pillars").classList.add("show");},450);
+    },400);
+  });
+})();
+
+/* ---------- deck navigation ---------- */
+(function deckInit(){
+  var slides=Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var total=slides.length, cur=0;
+  $("#ctot").textContent=String(total).padStart(2,"0");
+  var dots=$("#dots");
+  slides.forEach(function(_,i){
+    var b=document.createElement("button");b.className="dot"+(i===0?" on":"");
+    b.setAttribute("aria-label","Go to section "+(i+1));
+    b.addEventListener("click",function(){go(i);});
+    dots.appendChild(b);
+  });
+  var dotEls=Array.prototype.slice.call(dots.children);
+  function go(i){
+    if(i<0||i>=total||i===cur)return;
+    slides[cur].classList.remove("active");
+    dotEls[cur].classList.remove("on");
+    cur=i;
+    slides[cur].classList.add("active");
+    dotEls[cur].classList.add("on");
+    $("#cnow").textContent=String(cur+1).padStart(2,"0");
+    $("#topfill").style.width=((cur)/(total-1)*100)+"%";
+    $("#prev").disabled=(cur===0);
+    $("#next").disabled=(cur===total-1);
+    slides[cur].scrollTop=0;
+  }
+  window.__go=go;
+  $("#next").addEventListener("click",function(){go(cur+1);});
+  $("#prev").addEventListener("click",function(){go(cur-1);});
+  $("#restart").addEventListener("click",function(){go(0);});
+  $("#prev").disabled=true;
+  document.addEventListener("keydown",function(e){
+    if(document.body.classList.contains("mode-ask"))return;
+    if(e.key==="ArrowRight"||e.key==="PageDown"){go(cur+1);}
+    else if(e.key==="ArrowLeft"||e.key==="PageUp"){go(cur-1);}
+    else if(e.key===" "&&e.target===document.body){e.preventDefault();go(cur+1);}
+  });
+  // swipe
+  var sx=0,sy=0;
+  document.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){
+    if(document.body.classList.contains("mode-ask"))return;
+    var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)){go(dx<0?cur+1:cur-1);}
+  },{passive:true});
+})();
+
+/* ---------- fullscreen ---------- */
+$("#fsbtn").addEventListener("click",function(){
+  if(!document.fullscreenElement){ (document.documentElement.requestFullscreen||function(){})(); }
+  else{ (document.exitFullscreen||function(){})(); }
+});
+
+/* ---------- ambient honeycomb ---------- */
+(function ambient(){
+  var c=$("#hex"),ctx=c.getContext("2d");
+  function draw(){
+    var w=c.width=window.innerWidth, h=c.height=window.innerHeight;
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle="rgba(94,234,212,0.06)";ctx.lineWidth=1;
+    var r=46, dx=1.5*r, dy=Math.sqrt(3)*r, col=0;
+    for(var x=-r;x<w+r;x+=dx,col++){
+      var yoff=(col%2)?dy/2:0;
+      for(var y=-r+yoff;y<h+r;y+=dy){
+        ctx.beginPath();
+        for(var a=0;a<6;a++){
+          var ang=Math.PI/180*(60*a);
+          var px=x+r*Math.cos(ang), py=y+r*Math.sin(ang);
+          if(a===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+        }
+        ctx.closePath();ctx.stroke();
+      }
+    }
+  }
+  draw();
+  var t;window.addEventListener("resize",function(){clearTimeout(t);t=setTimeout(draw,150);});
+  // glow hexes
+  var glow=$("#glow"),reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(!reduce){
+    var colors=["var(--teal2)","var(--amber)","var(--seaf)"];
+    for(var i=0;i<6;i++){
+      var g=document.createElement("div");g.className="ghex";
+      g.style.left=(8+Math.random()*84)+"%";g.style.top=(8+Math.random()*80)+"%";
+      g.style.background=colors[i%3];
+      g.style.animationDelay=(-Math.random()*9)+"s";
+      g.style.transform="scale("+(0.7+Math.random()*1.3)+")";
+      glow.appendChild(g);
+    }
+  }
+})();
+
+/* ---------- LIVE Q&A (Firebase) ---------- */
+var liveStarted=false, QREF=null;
+var ANON='u'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+var votedSet={};
+function liveConfigured(){
+  var c=FIREBASE_CONFIG;
+  return c.apiKey&&c.apiKey.indexOf('PASTE')<0&&c.databaseURL&&c.databaseURL.indexOf('PASTE')<0;
+}
+function fbReady(cb,n){n=n||0;
+  if(typeof firebase!=='undefined'&&firebase.database){cb(true);return;}
+  if(n>40){cb(false);return;}
+  setTimeout(function(){fbReady(cb,n+1);},150);
+}
+function setLive(on){["livedot","livedot2"].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.toggle("on",!!on);});}
+function esc(s){return (s||'').replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+function setupHTML(){
+  return '<b>Live Q&amp;A isn\u2019t connected yet.</b> To switch it on (about 5 minutes, free):'+
+    '<ol><li>At <code>console.firebase.google.com</code>, create a project and add a <b>Web app</b>.</li>'+
+    '<li>Enable <b>Realtime Database</b> (start in test mode for the event).</li>'+
+    '<li>Paste the web config into <code>FIREBASE_CONFIG</code> near the top of this file, set <code>ROOM</code>, then host the file (Firebase Hosting, Netlify or GitHub Pages).</li></ol>'+
+    'Everything else in the deck works without this \u2014 only the live wall stays off.';
+}
+function tag(t){return '<span class="qtag '+(t==='feedback'?'f':'q')+'">'+(t==='feedback'?'Feedback':'Q')+'</span>';}
+function renderQuestions(list){
+  var lc=document.getElementById('livecount');
+  if(lc)lc.textContent=list.length+(list.length===1?' question':' questions');
+  var wall=document.getElementById('qwall');
+  if(wall){
+    wall.innerHTML=list.length?list.map(function(q){
+      return '<div class="qitem"><div class="qvote"><div class="vc">'+(q.votes||0)+'</div><div class="va">\u25B2</div></div>'+
+        '<div class="qbody"><div class="qtext">'+tag(q.type)+esc(q.text)+'</div>'+(q.name?'<div class="qmeta">\u2014 '+esc(q.name)+'</div>':'')+'</div>'+
+        '<button class="qx" data-id="'+q.id+'" title="Dismiss">\u2715</button></div>';
+    }).join(''):'<div class="qempty">No questions yet \u2014 they appear here live as students send them.</div>';
+    wall.querySelectorAll('.qx').forEach(function(b){b.addEventListener('click',function(){dismissQ(b.dataset.id);});});
+  }
+  var ask=document.getElementById('asklist');
+  if(ask){
+    ask.innerHTML=list.length?list.map(function(q){
+      return '<div class="aitem"><button class="avote'+(votedSet[q.id]?' voted':'')+'" data-id="'+q.id+'"><span class="ac">'+(q.votes||0)+'</span><span class="aa">\u25B2</span></button>'+
+        '<div class="abody"><div class="qtext">'+tag(q.type)+esc(q.text)+'</div>'+(q.name?'<div class="qmeta">\u2014 '+esc(q.name)+'</div>':'')+'</div></div>';
+    }).join(''):'<div class="qempty">Be the first to ask something.</div>';
+    ask.querySelectorAll('.avote').forEach(function(b){b.addEventListener('click',function(){upvote(b.dataset.id);});});
+  }
+}
+function onData(snap){
+  var val=snap.val()||{};
+  var list=Object.keys(val).map(function(k){var o=val[k]||{};o.id=k;return o;});
+  list.sort(function(a,b){return (b.votes||0)-(a.votes||0)||(a.ts||0)-(b.ts||0);});
+  renderQuestions(list);
+}
+function sendQ(text,name,type){
+  if(!QREF||!text.trim())return;
+  QREF.push({text:text.trim().slice(0,300),name:(name||'').trim().slice(0,40),type:type||'question',votes:0,ts:firebase.database.ServerValue.TIMESTAMP});
+}
+function upvote(id){
+  if(!QREF||votedSet[id])return;
+  votedSet[id]=true;
+  QREF.child(id).child('votes').set(firebase.database.ServerValue.increment(1));
+  var b=document.querySelector('.avote[data-id="'+id+'"]');if(b)b.classList.add('voted');
+}
+function dismissQ(id){if(QREF)QREF.child(id).remove();}
+function clearAllQ(){if(QREF&&confirm('Clear all questions from the wall?'))QREF.remove();}
+function buildQR(){
+  var box=document.getElementById('qrbox'),urlEl=document.getElementById('joinurl');
+  var target=ASK_URL||(location.origin+location.pathname+'#ask');
+  if(location.protocol==='file:'){if(urlEl)urlEl.textContent='Host this file online — then this becomes the link students scan.';}
+  else if(urlEl){urlEl.textContent=target;}
+  if(!box)return;
+  box.innerHTML='';
+  if(typeof QRCode!=='undefined'&&location.protocol!=='file:'){
+    try{new QRCode(box,{text:target,width:186,height:186,colorDark:'#08272B',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
+    catch(e){box.innerHTML='<div class="qrfallback">'+esc(target)+'</div>';}
+  }else{box.innerHTML='<div class="qrfallback">'+(location.protocol==='file:'?'QR appears once the file is hosted online':esc(target))+'</div>';}
+}
+function wireAsk(){
+  var t=document.getElementById('askType');
+  if(t)t.querySelectorAll('.segbtn').forEach(function(b){b.addEventListener('click',function(){
+    t.querySelectorAll('.segbtn').forEach(function(o){o.classList.remove('on');});b.classList.add('on');});});
+  var send=document.getElementById('askSend');
+  if(send)send.addEventListener('click',function(){
+    var ta=document.getElementById('askText'),nm=document.getElementById('askName');
+    var sel=document.querySelector('#askType .segbtn.on');var typ=sel?sel.dataset.t:'question';
+    if(!ta.value.trim())return;
+    sendQ(ta.value,nm.value,typ);ta.value='';
+    var toast=document.getElementById('asktoast');
+    if(toast){toast.textContent='Sent \u2713 — thank you!';toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},2200);}
+  });
+}
+function showSetupState(){
+  var sp=document.getElementById('setupPanel'),ls=document.getElementById('liveStage');
+  if(sp){sp.style.display='block';sp.innerHTML=setupHTML();}if(ls)ls.style.display='none';
+  var as=document.getElementById('asksetup'),ac=document.getElementById('askCompose'),al=document.getElementById('asklist'),ah=document.querySelector('.asklisthead'),rl=document.getElementById('askroomlabel');
+  if(as){as.style.display='block';as.innerHTML=setupHTML();}if(ac)ac.style.display='none';if(al)al.style.display='none';if(ah)ah.style.display='none';if(rl)rl.textContent='not set up';
+}
+function initLiveQA(){
+  if(liveStarted)return;liveStarted=true;
+  if(location.hash.replace('#','')==='ask')document.body.classList.add('mode-ask');
+  if(!liveConfigured()){showSetupState();return;}
+  fbReady(function(ok){
+    if(!ok){
+      var sp=document.getElementById('setupPanel'),ls=document.getElementById('liveStage');
+      if(sp){sp.style.display='block';sp.innerHTML='<b>Couldn\u2019t reach the live service.</b> Check the network — the deck still works, only the live wall needs internet.';}
+      if(ls)ls.style.display='none';
+      var rl=document.getElementById('askroomlabel');if(rl)rl.textContent='offline';
+      return;
+    }
+    try{
+      if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+      QREF=firebase.database().ref('rooms/'+ROOM+'/questions');
+      QREF.on('value',onData);
+      setLive(true);wireAsk();
+      var cb=document.getElementById('clearbtn');if(cb)cb.addEventListener('click',clearAllQ);
+      var rl=document.getElementById('askroomlabel');if(rl)rl.textContent='live';
+      buildQR();
+    }catch(e){console.error('Live Q&A init error',e);showSetupState();}
+  });
+}
+document.addEventListener('DOMContentLoaded',initLiveQA);
+if(document.readyState!=='loading')setTimeout(initLiveQA,0);
+window.addEventListener('hashchange',function(){
+  if(location.hash.replace('#','')==='ask'&&!document.body.classList.contains('mode-ask'))location.reload();
+});
+</script>
+</body>
+</html>
